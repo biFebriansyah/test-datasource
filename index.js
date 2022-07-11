@@ -29,9 +29,10 @@ const checkAmqp = async () => {
       }
 
       console.log('Rabbitmq connected')
-      return
    })
 }
+
+console.log(`amqp://${process.env.AMQP_HOST}`)
 
 checkRedis()
 checkAmqp()
