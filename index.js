@@ -18,19 +18,20 @@ const checkRedis = async () => {
       }
       await redis.quit()
    } catch (error) {
-      logger.error(error)
+      console.log(error)
    }
 }
 
 const checkAmqp = async () => {
-   amqp.connect('amqp://localhost', (err, conn) => {
+   amqp.connect(`amqp://${process.env.AMQP_HOST}`, (err, conn) => {
       if (err) {
          console.log(err)
       }
 
       console.log('Rabbitmq connected')
+      return
    })
 }
 
-checkAmqp()
 checkRedis()
+checkAmqp()
