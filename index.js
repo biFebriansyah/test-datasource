@@ -1,9 +1,15 @@
 require('dotenv').config()
 const { createClient } = require('redis')
 const amqp = require('amqplib/callback_api')
+const elasticseacrh = require('elasticsearch')
 
 const redis = createClient({
    url: `redis://${process.env.REDIS_HOST}:6379`
+})
+
+const elastic = new elasticseacrh.Client({
+   host: process.env.ELASTIC_HOST,
+   apiVersion: 'master'
 })
 
 const checkRedis = async () => {
@@ -32,7 +38,21 @@ const checkAmqp = async () => {
    })
 }
 
-console.log(`amqp://${process.env.AMQP_HOST}`)
+const checkElastic = async () => {
+   elastic.indices.create(
+      {
+         index: 'test-elastic'
+      },
+      (err, res, status) => {
+         if (err) {
+            console.log(err)
+            return
+         }
+         console.log(res)
+      }
+   )
+}
 
+checkElastic()
 checkRedis()
 checkAmqp()
