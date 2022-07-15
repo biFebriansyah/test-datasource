@@ -1,11 +1,9 @@
 require('dotenv').config()
 const { createClient } = require('redis')
+const { Pool } = require('pg')
 const amqp = require('amqplib/callback_api')
 const elasticseacrh = require('elasticsearch')
 
-// const redis = createClient({
-//    url: `redis://${process.env.REDIS_HOST}:6379`
-// })
 const redis = createClient({
    host: process.env.REDIS_HOST,
    port: 6379
@@ -16,30 +14,23 @@ const elastic = new elasticseacrh.Client({
    apiVersion: 'master'
 })
 
-const checkRedis = () => {
+const psql = new Pool({
+   host: process.env.DB_HOST,
+   user: process.env.DB_USER,
+   database: process.env.DB_DATABASE,
+   password: process.env.DB_PASSWORD,
+   port: 5432
+})
+
+const checkRedis = async () => {
    redis.setex('testkey', 30, 'hallo', (err, rep) => {
       if (err) {
          console.log(err)
          return
       }
-      console.log(rep)
+      console.log('Redis connected')
    })
 }
-// const checkRedis = async () => {
-//    try {
-//       await redis.connect()
-//       const data = await redis.get('testkey')
-
-//       if (data === 'OK' || data == null) {
-//          console.log('redis connected')
-//       } else {
-//          console.log(data)
-//       }
-//       await redis.quit()
-//    } catch (error) {
-//       console.log(error)
-//    }
-// }
 
 const checkAmqp = async () => {
    amqp.connect(`amqp://${process.env.AMQP_HOST}`, (err, conn) => {
@@ -61,11 +52,25 @@ const checkElastic = async () => {
             console.log(err)
             return
          }
-         console.log(res)
+         console.log('elastic connected')
       }
    )
 }
 
-// checkElastic()
-checkRedis()
-// checkAmqp()
+const testPsqlAuth = async () => {
+   psql.query('SELECT NOW()', (err, res) => {
+      if (err) {
+         console.log(err)
+         return
+      }
+      console.log('postgres connected')
+      psql.end()
+   })
+}
+
+;(async () => {
+   await testPsqlAuth()
+   await checkRedis()
+   await checkElastic()
+   await checkAmqp()
+})()
