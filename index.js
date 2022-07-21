@@ -3,6 +3,7 @@ const { createClient } = require('redis')
 const { Pool } = require('pg')
 const amqp = require('amqplib/callback_api')
 const elasticseacrh = require('elasticsearch')
+const { Client } = require('es7')
 
 const redis = createClient({
    host: process.env.REDIS_HOST,
@@ -23,6 +24,24 @@ const psql = new Pool({
    password: process.env.DB_PASSWORD,
    port: 5432
 })
+
+const clients = new Client({
+   node: process.env.ELASTIC_HOST,
+   headers: { 'content-type': 'application/json; charset=UTF-8' }
+})
+
+const elasticBody = {
+   from: 0,
+   size: 12,
+   query: {
+      bool: {
+         filter: [
+            { match: { created_at: '2022-07-21T03:11:55.613Z' } },
+            { match: { position: 'Frontend Web Developer' } }
+         ]
+      }
+   }
+}
 
 const checkRedis = async () => {
    redis.setex('testkey', 30, 'hallo', (err, rep) => {
@@ -45,19 +64,16 @@ const checkAmqp = async () => {
 }
 
 const checkElastic = async () => {
-   elastic.ping(
-      {
-         requestTimeout: Infinity,
-         hello: 'elasticsearch!'
-      },
-      (err) => {
-         if (err) {
-            console.log(err)
-         } else {
-            console.log('Elastic connected')
-         }
-      }
-   )
+   try {
+      const { body } = await clients.search({
+         index: 'arkademy.hiring-platform-fazztrack',
+         body: elasticBody,
+         type: 'talent_list'
+      })
+      console.log(body)
+   } catch (error) {
+      console.log(error)
+   }
 }
 
 const testPsqlAuth = async () => {
