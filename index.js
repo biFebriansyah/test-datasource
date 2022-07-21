@@ -11,6 +11,8 @@ const redis = createClient({
 
 const elastic = new elasticseacrh.Client({
    host: process.env.ELASTIC_HOST,
+   maxRetries: 5,
+   requestTimeout: 60000,
    apiVersion: 'master'
 })
 
@@ -43,16 +45,17 @@ const checkAmqp = async () => {
 }
 
 const checkElastic = async () => {
-   elastic.indices.create(
+   elastic.ping(
       {
-         index: 'test-elastic2'
+         requestTimeout: Infinity,
+         hello: 'elasticsearch!'
       },
-      (err, res, status) => {
+      (err) => {
          if (err) {
             console.log(err)
-            return
+         } else {
+            console.log('Elastic connected')
          }
-         console.log('elastic connected')
       }
    )
 }
